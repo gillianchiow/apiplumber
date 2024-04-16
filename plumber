@@ -1,0 +1,51 @@
+# Load the plumber library
+library(plumber)
+
+# Load necessary database packages
+library(DBI)
+library(RSQLite)
+
+# Connect to your SQLite database
+conn <- dbConnect(RSQLite::SQLite(), "your1_database.db")
+
+# Define the SQL statement to create the table
+sql <- "CREATE TABLE IF NOT EXISTS lighter_calls (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          participants TEXT,
+          payload TEXT,
+          on_behalf_of TEXT,
+          receive_timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )"
+
+# Execute the SQL statement to create the table
+dbExecute(conn, sql)
+
+#* Receive the Lighter Call from participants
+#* @post /data/receive/lighter_call
+#* @param participants The list of participants
+#* @param payload The payload data
+#* @param on_behalf_of The list of on behalf of
+#* @serializer json
+function(participants, payload, on_behalf_of) {
+  # Your processing logic here
+  
+  # Check if the status is successful
+  # For demonstration purposes, let's assume status is a field in the payload
+  status <- "success"  # Replace this with your actual logic to determine the status
+  
+  if (status == "success") {
+    # Insert the received data into your database
+    # Assuming you have a table named "lighter_calls"
+    sql <- paste("INSERT INTO lighter_calls (participants, payload, on_behalf_of) VALUES (?, ?, ?)")
+    dbExecute(conn, sql, list(jsonlite::toJSON(participants), jsonlite::toJSON(payload), jsonlite::toJSON(on_behalf_of)))
+    
+    # Return "success" if the status is successful
+    response <- "success"
+  } else {
+    # Handle other cases if needed
+    response <- "failure"
+  }
+  
+  # Return the response
+  response
+}
